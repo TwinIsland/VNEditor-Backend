@@ -1,18 +1,28 @@
-from Frame import Frame
-from Music import Music
-from module.Exception import *
-from module.ConfigManager import Loader
-from utils.file_utils import *
+"""
+----------------------------
+The Best Visual Novel Engine
+        Yui Engine
+----------------------------
+
+contain all basic information to build a visual novel
+"""
 import os
 import pickle
-from Music import MusicSignal
-from Background import Background
-from Character import Character, CharacterPosition
-from Dialogue import Dialogue
-from utils.args_utils import Args
-from Action import Action
 import time
 from enum import Enum
+
+from module.exception import EngineError
+from module.config_manager import Loader
+from utils.file_utils import check_file_valid, check_folder_valid, get_files_in_folder
+from utils.args_utils import Args
+
+from .action import Action
+from .music import MusicSignal
+from .music import Music
+from .background import Background
+from .character import Character, CharacterPosition
+from .dialogue import Dialogue
+from .frame import Frame
 
 VERSION = "1.0.0"
 RELEASE_DATE = "22/2/2023"
@@ -50,8 +60,8 @@ def engine_exception_handler(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception as e:
-            print("Engine Error: ", str(e))
+        except Exception as e_msg:
+            print("Engine Error: ", str(e_msg))
             return STATUS.FAIL
 
     return wrapper
@@ -64,7 +74,7 @@ def print_fail(do_what: str):
     @param do_what: fail describe
     @return:
     """
-    print("(Engine) FAIL -- %s" % do_what)
+    print(f"(Engine) FAIL -- {do_what}")
 
 
 class Engine:
@@ -72,17 +82,20 @@ class Engine:
     Engine main class, used to edit frame in project
     """
 
-    # metadata for the game file, update automatically through calling update_metadata() function
+    # metadata for the game file, update automatically
+    # through calling update_metadata() function
     __metadata: dict = {}
 
-    # activated variables, initialized after class construct, should be UPDATED ON TIME every time they changed
+    # activated variables, initialized after class construct,
+    # should be UPDATED ON TIME every time they changed
+
     __game_content: dict[int, Frame] = {}
     __head: int = -1  # the head of the frame list
     __tail: int = -1  # the tail of the frame list
     __last_fid: int = -1  # the last used fid (frame id)
     __all_fids: set[int] = set()  # all fids in list
 
-    def __int__(
+    def __init__(
         self,
         project_dir: str,
         config_dir: str,
@@ -97,23 +110,25 @@ class Engine:
         @return:
         """
         if not check_folder_valid(project_dir):
-            raise EngineError("project {} not exist".format(project_dir))
+            raise EngineError(f"project {project_dir} not exist")
 
-        self.project_dir = project_dir
-        self.config = Loader(config_dir=config_dir)
+        # self.__project_dir = project_dir
+        self.__config = Loader(config_dir=config_dir)
 
-        self.bg_base_dir = abs_dir(
-            project_dir, self.config.resources()["background_dir"]
+        self.__bg_base_dir = abs_dir(
+            project_dir, self.__config.resources()["background_dir"]
         )
-        self.music_base_dir = abs_dir(project_dir, self.config.resources()["music_dir"])
-        self.chara_base_dir = abs_dir(
-            project_dir, self.config.resources()["character_dir"]
+        self.__music_base_dir = abs_dir(
+            project_dir, self.__config.resources()["music_dir"]
         )
-        self.game_file_dir = abs_dir(project_dir, game_file_name)
+        self.__chara_base_dir = abs_dir(
+            project_dir, self.__config.resources()["character_dir"]
+        )
+        self.__game_file_dir = abs_dir(project_dir, game_file_name)
 
-        if check_file_valid(self.game_file_dir):
-            with open(self.game_file_dir, "r") as fo:
-                game_content_raw = pickle.load(fo)
+        if check_file_valid(self.__game_file_dir):
+            with open(self.__game_file_dir, "r", encoding="UTF-8") as file_stream:
+                game_content_raw = pickle.load(file_stream)
             self.__metadata = game_content_raw[0]
             self.__game_content = game_content_raw[1]
             self.__last_fid = self.__metadata["last_fid"]
@@ -154,41 +169,52 @@ class Engine:
         @param chara_res: character resources name (not directory)
         @param chara_position: character position
         @param dialogue: dialogue content
-        @param dialogue_character: dialogue from which character, should be character resources name, if leave none, dialogue from VO
+        @param dialogue_character: dialogue from which character,
+        should be character resources name, if leave none, dialogue from VO
+
         @param music_res: music resources name, signal cannot be PLAY when this item leave none
         @param music_status: music play status for current frame
         @return: added frame id
         """
 
         # check if input resources valid or not
-        if not check_file_valid(abs_dir(self.bg_base_dir, bg_res)):
-            raise EngineError("Background resource {} cannot find".format(bg_res))
+        if not check_file_valid(abs_dir(self.__bg_base_dir, bg_res)):
+            raise EngineError(f"Background resource {bg_res} cannot find")
 
-        if not check_file_valid(abs_dir(self.chara_base_dir, chara_res)):
-            raise EngineError("Character resource {} cannot find".format(chara_res))
+        if not check_file_valid(abs_dir(self.__chara_base_dir, chara_res)):
+            raise EngineError(f"Character resource {chara_res} cannot find")
 
-        if not check_file_valid(abs_dir(self.music_base_dir, music_res)):
-            raise EngineError("Music resource {} cannot find".format(bg_res))
+        if not check_file_valid(abs_dir(self.__music_base_dir, music_res)):
+            raise EngineError(f"Music resource {bg_res} cannot find")
 
         if music_status == MusicSignal.PLAY and not check_file_valid(
-            abs_dir(self.music_base_dir, music_res)
+            abs_dir(self.__music_base_dir, music_res)
         ):
-            raise EngineError("Music resources {} cannot find".format(music_res))
+            raise EngineError(f"Music resources {music_res} cannot find")
 
-        if dialogue_character not in get_files_in_folder(self.chara_base_dir):
-            raise EngineError("Character {} cannot find".format(dialogue_character))
+        if (
+            dialogue_character != Args.OPTIONAL
+            and dialogue_character not in get_files_in_folder(self.__chara_base_dir)
+        ):
+            raise EngineError(f"Character {dialogue_character} cannot find")
 
         # make the component
         fid = self.__last_fid + 1
         background = Background(res_name=bg_res)
         character = Character(res_name=chara_res, position=chara_position)
         music = Music(res_name=music_res, signal=music_status)
-        dialogue = Dialogue(dialogue=dialogue, character=dialogue_character)
+
+        if dialogue_character == Args.OPTIONAL:
+            dialogue_chara = Character()
+        else:
+            dialogue_chara = Character(res_name=dialogue_character)
+
+        dialogue = Dialogue(dialogue=dialogue, character=dialogue_chara)
         action = Action(next_f_id=Action.LAST_FRAME, prev_f_id=self.__tail)
 
         frame = Frame(
             fid=fid,
-            bg=background,
+            background=background,
             chara=character,
             music=music,
             dialog=dialogue,
@@ -212,7 +238,8 @@ class Engine:
 
         return fid
 
-    def move_frame(self, distinct_frame_id: int, from_frame_id: int):
+    @engine_exception_handler
+    def move_frame(self, distinct_frame_id: int, from_frame_id: int) -> STATUS:
         """
         move the from_frame to the next of the distinct_frame
 
@@ -239,6 +266,7 @@ class Engine:
         from_frame.action.change_prev_f(distinct_frame_id)
         from_frame.action.change_next_f(dist_frame.action.next_f)
         dist_frame.action.change_next_f(from_frame_id)
+        return STATUS.OK
 
     def commit(self) -> bool:
         """
@@ -249,9 +277,9 @@ class Engine:
         self.__update_metadata()
         game_content_raw = [self.__metadata, self.__game_content]
         try:
-            with open(self.game_file_dir, "w") as fo:
-                pickle.dump(game_content_raw, fo)
-        except Exception as e:
-            print_fail("fail to commit due to: " + str(e))
+            with open(self.__game_file_dir, "w", encoding="UTF-8") as file_stream:
+                pickle.dump(game_content_raw, file_stream)
+        except Exception as e_msg:
+            print_fail("fail to commit due to: " + str(e_msg))
             return False
         return True

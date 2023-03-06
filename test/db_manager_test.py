@@ -1,10 +1,12 @@
+"""
+test case for DB manager
+"""
 import unittest
-from module.ProjectManager import ProjectManagerError
-from module.GameSlot import GameSlot
-from module.DBManager import DBManager
-from module.ConfigManager import Loader
+from module.gameslot import GameSlot
+from module.db_manager import DBManager
+from module.config_manager import Loader
 from utils import file_utils
-from module.Exception import *
+from module.exception import *
 
 
 class DBManagerTest(unittest.TestCase):

@@ -1,14 +1,16 @@
+"""
+test case for game slot
+"""
 import unittest
-from module.ProjectManager import ProjectManagerError
-from module.GameSlot import GameSlot
-from module.DBManager import DBManager
-from module.ConfigManager import Loader
+from module.gameslot import GameSlot
+from module.db_manager import DBManager
+from module.config_manager import Loader
 from utils import file_utils
-from module.Exception import *
+from module.exception import *
 
 
 class GameSlotTest(unittest.TestCase):
-    CONFIG_DIR = "../router/service.ini"
+    CONFIG_DIR = "../service.ini"
     GAME_DB_NAME = "test.db"
     game_slot = GameSlot(db_dir=GAME_DB_NAME, config_dir=CONFIG_DIR)
 

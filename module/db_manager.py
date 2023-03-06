@@ -4,7 +4,7 @@ A general database key-value PDO
 
 import os
 import sqlite3
-from .Exception import *
+from .exception import DBManagerError
 
 
 class DBManager:
@@ -19,7 +19,7 @@ class DBManager:
         @param db_dir: database directory
         """
         self.__cursor = None
-        self.DB = None
+        self.__db = None
         self.connect(db_dir)
 
     def create_table_if_not_exist(self, table_name: str):
@@ -47,14 +47,12 @@ class DBManager:
         """
         try:
             self.__cursor.execute(
-                'INSERT INTO {} (Key,Value) Values ("{}", "{}")'.format(
-                    table_name, key, value
-                )
+                f'INSERT INTO {table_name} (Key,Value) Values ("{key}", "{value}")'
             )
-        except sqlite3.Error:
+        except sqlite3.Error as e_msg:
             raise DBManagerError(
-                "key '{}' already exist in table '{}'".format(key, table_name)
-            )
+                f"key f'{key}' already exist in table '{table_name}'"
+            ) from e_msg
 
     def push_dict(self, data: dict, table_name: str):
         """
@@ -76,10 +74,10 @@ class DBManager:
         """
         try:
             self.__cursor.execute(
-                'UPDATE {} SET Value="{}" WHERE Key="{}"'.format(table_name, value, key)
+                f'UPDATE {table_name} SET Value="{value}" WHERE Key="{key}"'
             )
-        except sqlite3.Error as e:
-            raise DBManagerError(str(e))
+        except sqlite3.Error as e_msg:
+            raise DBManagerError(str(e_msg)) from e_msg
 
     def remove(self, key: str, table_name: str):
         """
@@ -90,11 +88,9 @@ class DBManager:
         @return:
         """
         try:
-            self.__cursor.execute(
-                'DELETE from {} where key="{}"'.format(table_name, key)
-            )
-        except sqlite3.Error as e:
-            raise DBManagerError(str(e))
+            self.__cursor.execute(f'DELETE from {table_name} where key="{key}"')
+        except sqlite3.Error as e_msg:
+            raise DBManagerError(str(e_msg)) from e_msg
 
     def drop_table(self, table_name: str):
         """
@@ -104,9 +100,9 @@ class DBManager:
         @return:
         """
         try:
-            self.__cursor.execute("DROP TABLE IF EXISTS {}".format(table_name))
-        except sqlite3.Error:
-            raise DBManagerError("drop table {} fail".format(table_name))
+            self.__cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+        except sqlite3.Error as e_msg:
+            raise DBManagerError(f"drop table {table_name} fail") from e_msg
 
     def select(self, table_name: str, is_desc: bool = False, amount: int = -1) -> dict:
         """
@@ -117,18 +113,16 @@ class DBManager:
         @param amount: amount item to be selected, if overflow or -1, select all items
         @return: selected items
         """
-        arg_LIMIT = "LIMIT " + str(amount) if amount != -1 else ""
-        arg_DESC = "ORDERED BY Value DESC" if is_desc else ""
+        arg_limit = "LIMIT " + str(amount) if amount != -1 else ""
+        arg_desc = "ORDERED BY Value DESC" if is_desc else ""
         try:
             data = self.__cursor.execute(
-                "SELECT id, key, value  from {} {} {}".format(
-                    table_name, arg_LIMIT, arg_DESC
-                )
+                f"SELECT id, key, value  from {table_name} {arg_limit} {arg_desc}"
             )
-        except Exception:
+        except Exception as e_msg:
             raise DBManagerError(
-                "error occur when select from table: {}".format(table_name)
-            )
+                f"error occur when select from table: {table_name}"
+            ) from e_msg
         out = {}
         for row in data:
             out[row[1]] = row[2]
@@ -141,9 +135,9 @@ class DBManager:
         @return:
         """
         try:
-            self.DB.commit()
-        except Exception:
-            raise DBManagerError("error occur when commit database")
+            self.__db.commit()
+        except Exception as e_msg:
+            raise DBManagerError("error occur when commit database") from e_msg
 
     def close(self):
         """
@@ -152,9 +146,9 @@ class DBManager:
         @return:
         """
         try:
-            self.DB.close()
-        except Exception:
-            raise DBManagerError("error occur when close database")
+            self.__db.close()
+        except Exception as e_msg:
+            raise DBManagerError("error occur when close database") from e_msg
 
     def connect(self, db_dir):
         """
@@ -164,11 +158,11 @@ class DBManager:
         @return:
         """
         if not os.path.exists(db_dir):
-            print("create new db: %s in: " % db_dir)
+            print(f"create new db: {db_dir} in: ")
         else:
-            print("connect to db: %s" % db_dir)
-        self.DB = sqlite3.connect(db_dir)
-        self.__cursor = self.DB.cursor()
+            print(f"connect to db: {db_dir}")
+        self.__db = sqlite3.connect(db_dir)
+        self.__cursor = self.__db.cursor()
 
 
 if __name__ == "__main__":

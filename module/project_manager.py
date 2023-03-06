@@ -1,7 +1,11 @@
+"""
+Manage Project, provide service to manage project, include add, remove, edit
+"""
+
 import os.path
 
 from utils import file_utils
-from .ConfigManager import *
+from .config_manager import Loader
 
 BACKGROUND_CAT = "background_dir"
 CHARACTER_CAT = "character_dir"
@@ -10,7 +14,7 @@ MUSIC_CAT = "music_dir"
 
 def delete_project(folder_dir: str) -> bool:
     """
-    @param folder_dir: project directory to be delete
+    @param folder_dir: project directory to be deleted
     @return: status of delete action
     """
     if not file_utils.check_folder_valid(folder_dir):
@@ -19,7 +23,11 @@ def delete_project(folder_dir: str) -> bool:
     return file_utils.delete_folder(folder_dir=folder_dir)
 
 
-class projectManager:
+class ProjectManager:
+    """
+    project manager class
+    """
+
     def __init__(self, base_dir: str, config_dir: str):
         """
         constructor for project manager
@@ -50,8 +58,9 @@ class projectManager:
         """
         file_dir_abs = os.path.join(self.__base, self.__config_res[cat])
         res = file_utils.get_all_in_folder(file_dir_abs)
-        if not len(filter_by):
+        if len(filter_by) != 0:
             return res
+        return []
 
     def __delete_general_res(self, cat: str, file_dir: str) -> bool:
         """

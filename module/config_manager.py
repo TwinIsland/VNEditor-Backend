@@ -1,6 +1,9 @@
+"""
+Config Manager
+"""
 import configparser
-from utils.file_utils import *
-from .Exception import *
+from utils.file_utils import check_file_valid
+from .exception import ConfigLoaderError
 
 
 class Loader:

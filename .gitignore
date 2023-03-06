@@ -51,4 +51,4 @@ docs/_build/
 
 # dev stuff
 .idea
-black_formatter.bat
+linter_script.bat

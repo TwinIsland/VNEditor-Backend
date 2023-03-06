@@ -1,23 +1,33 @@
+"""
+test case for config manager
+"""
 import unittest
-from module.ProjectManager import ProjectManagerError
-from module.GameSlot import GameSlot
-from module.DBManager import DBManager
-from module.ConfigManager import Loader
+from module.gameslot import GameSlot
+from module.db_manager import DBManager
+from module.config_manager import Loader
 from utils import file_utils
-from module.Exception import *
+from module.exception import *
 
 
 class ConfigManagerTest(unittest.TestCase):
-    CONFIG_DIR = "../router/service.ini"
+    CONFIG_DIR = "../service.ini"
     config = Loader(CONFIG_DIR)
 
     def test_load_config_game_memory(self):
+        """
+        test case for load the game memory
+        @return:
+        """
         game_memory_config = self.config.game_memory()
         self.assertEqual(game_memory_config["default_slot_name"], "slot")
 
     def test_load_config_engine(self):
+        """
+        test case for load the config
+        @return:
+        """
         game_memory_config = self.config.engine()
-        self.assertEqual(game_memory_config["engine"], "engine/YuiEngine.py")
+        self.assertEqual(game_memory_config["engine"], "engine/yui_engine.py")
 
     def test_load_config_resources(self):
         game_memory_config = self.config.resources()
