@@ -111,21 +111,27 @@ class RouterUtils:
         suffix = os.path.splitext(file.filename)[-1]
 
         if rtype is ResourcesType.background:
-            to_path = os.path.join(self.__project_manager.get_base_dir(),
-                                   self.__resources_config["background_dir"])
-            if suffix not in self.__resources_config["background_support"].split(','):
+            to_path = os.path.join(
+                self.__project_manager.get_base_dir(),
+                self.__resources_config["background_dir"],
+            )
+            if suffix not in self.__resources_config["background_support"].split(","):
                 raise RouterError(f"file type '{suffix}' not support")
 
         elif rtype is ResourcesType.music:
-            to_path = os.path.join(self.__project_manager.get_base_dir(),
-                                   self.__resources_config["music_dir"])
-            if suffix not in self.__resources_config["music_support"].split(','):
+            to_path = os.path.join(
+                self.__project_manager.get_base_dir(),
+                self.__resources_config["music_dir"],
+            )
+            if suffix not in self.__resources_config["music_support"].split(","):
                 raise RouterError(f"file type '{suffix}' not support")
 
         elif rtype is ResourcesType.character:
-            to_path = os.path.join(self.__project_manager.get_base_dir(),
-                                   self.__resources_config["character_dir"])
-            if suffix not in self.__resources_config["character_support"].split(','):
+            to_path = os.path.join(
+                self.__project_manager.get_base_dir(),
+                self.__resources_config["character_dir"],
+            )
+            if suffix not in self.__resources_config["character_support"].split(","):
                 raise RouterError(f"file type '{suffix}' not support")
         else:
             raise RouterError(f"no such rtype: {rtype}")
@@ -156,21 +162,23 @@ class RouterUtils:
 
 router_utils = RouterUtils()
 
-with open('doc/ascii_logo', 'r') as f_stream:
-    print('\n', f_stream.read())
-    print("\n"
-          f"{router_utils.version_info['name']}\n"
-          f"Version: {router_utils.version_info['version']}\n")
+with open("doc/ascii_logo", "r") as f_stream:
+    print("\n", f_stream.read())
+    print(
+        "\n"
+        f"{router_utils.version_info['name']}\n"
+        f"Version: {router_utils.version_info['version']}\n"
+    )
 
 
 @app.get("/", include_in_schema=False)
 async def read_index():
-    return FileResponse('doc/index.html')
+    return FileResponse("doc/index.html")
 
 
 @app.get("/baka", include_in_schema=False)
 async def read_index():
-    return FileResponse('doc/baka.png')
+    return FileResponse("doc/baka.png")
 
 
 @app.post("/init_project")
