@@ -31,3 +31,9 @@ class EngineError(Exception):
     """
     exception class for Engine
     """
+
+
+class RouterError(Exception):
+    """
+    exception class for router
+    """
