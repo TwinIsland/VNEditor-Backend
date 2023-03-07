@@ -52,3 +52,4 @@ docs/_build/
 # dev stuff
 .idea
 projects
+start_server_dev.bat
