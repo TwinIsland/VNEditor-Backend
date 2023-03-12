@@ -179,7 +179,7 @@ class RouterUtils:
             file.file.close()
 
         to_return = {"filename": file.filename, "directory": to_path, "size": file_size}
-        return ReturnDict(status=STATUS.OK, content=to_return)
+        return ReturnDict(status=STATUS.OK, msg="ok", content=to_return)
 
     @router_exception_handler
     def get_base_dir(self, task_id: str) -> ReturnDict:
@@ -313,7 +313,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-with open("res/ascii_logo", "r", encoding="UTF-8") as f_stream:
+with open("static/ascii_logo", "r", encoding="UTF-8") as f_stream:
     print("\n", f_stream.read())
     print(
         "\n"
@@ -324,12 +324,12 @@ with open("res/ascii_logo", "r", encoding="UTF-8") as f_stream:
 
 @app.get("/", include_in_schema=False)
 async def read_index():
-    return FileResponse("res/index.html")
+    return FileResponse("static/index.html")
 
 
 @app.get("/ok_image", include_in_schema=False)
 async def read_index():
-    return FileResponse("res/ok.webp")
+    return FileResponse("static/ok.webp")
 
 
 @app.post("/init_project", tags=["project"])
