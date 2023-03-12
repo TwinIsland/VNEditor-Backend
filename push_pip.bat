@@ -18,7 +18,7 @@ echo linter result been pushed into 'linter_result.txt'
 echo start committing
 timeout 1  > nul
 git add ./
-git commit -m %commit_msg%
+git commit -m "%commit_msg%"
 git push
 echo OK!
 pause
