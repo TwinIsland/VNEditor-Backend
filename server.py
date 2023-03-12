@@ -313,7 +313,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-with open("doc/ascii_logo", "r", encoding="UTF-8") as f_stream:
+with open("res/ascii_logo", "r", encoding="UTF-8") as f_stream:
     print("\n", f_stream.read())
     print(
         "\n"
@@ -324,12 +324,12 @@ with open("doc/ascii_logo", "r", encoding="UTF-8") as f_stream:
 
 @app.get("/", include_in_schema=False)
 async def read_index():
-    return FileResponse("doc/index.html")
+    return FileResponse("res/index.html")
 
 
-@app.get("/baka", include_in_schema=False)
+@app.get("/ok_image", include_in_schema=False)
 async def read_index():
-    return FileResponse("doc/baka.png")
+    return FileResponse("res/ok.webp")
 
 
 @app.post("/init_project", tags=["project"])
