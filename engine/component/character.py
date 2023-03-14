@@ -1,26 +1,21 @@
 """
 character component for frame
 """
-
-from enum import Enum
-from utils.args_utils import Args
+from typing import Optional
 
 
-class CharacterPosition(Enum):
+class CharacterPosition:
     """
-    Enumerate define character position:
-    L2: most left
-    L1: left
-    M: middle
-    R1: right
-    R2: most right
+    coordinate of character
+
     """
 
-    L2 = 1
-    L1 = 2
-    M = 3
-    R1 = 4
-    R2 = 5
+    x: float = 0
+    y: float = 0
+
+    def __init__(self, x: float, y: float):
+        self.x = x
+        self.y = y
 
 
 class Character:
@@ -29,9 +24,11 @@ class Character:
 
     """
 
-    VO = Args.DEFAULT  # voice over option
-
-    def __init__(self, res_name: str = VO, position: CharacterPosition = Args.OPTIONAL):
+    def __init__(
+        self,
+        res_name: Optional[str] = None,
+        position: Optional[CharacterPosition] = CharacterPosition(0, 0),
+    ):
         """
         constructor for character
 
@@ -49,7 +46,9 @@ class Character:
         """
         return self.res_name
 
-    def set_character(self, res_name: str, position: CharacterPosition = Args.OPTIONAL):
+    def set_character(
+        self, res_name: str, position: CharacterPosition = Optional[CharacterPosition]
+    ):
         """
         setter for character
         @param res_name: new resources name

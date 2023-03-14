@@ -6,37 +6,20 @@ The Best Visual Novel Engine
 
 contain all basic information to build a visual novel
 """
-import os
-import pickle
-import time
 
+import os
+import time
+import engine_io
+
+from typing import Optional
 from module.exception import EngineError
 from module.config_manager import ConfigLoader
-from utils.file_utils import check_file_valid, check_folder_valid, get_files_in_folder
-from utils.args_utils import Args, STATUS
-
-from .action import Action
-from .music import MusicSignal
-from .music import Music
-from .background import Background
-from .character import Character, CharacterPosition
-from .dialogue import Dialogue
-from .frame import Frame
+from utils.file_utils import check_file_valid, check_folder_valid, abs_dir
+from utils.status import StatusCode
+from .frame import BasicFrame, Frame
+from .frame_checker import FrameChecker
 
 VERSION = "1.0.0"
-RELEASE_DATE = "22/2/2023"
-DEFAULT_GAME_FILE_NAME = "GameFile.vne"
-
-
-def abs_dir(project_dir: str, relevant_dir: str):
-    """
-    get absolute directory from project/relevant directory
-
-    @param project_dir: project directory
-    @param relevant_dir: relevant directory
-    @return: absolute directory
-    """
-    return os.path.join(project_dir, relevant_dir)
 
 
 def engine_exception_handler(func):
@@ -52,19 +35,9 @@ def engine_exception_handler(func):
             return func(*args, **kwargs)
         except Exception as e_msg:
             print("Engine Error: ", str(e_msg))
-            return STATUS.FAIL
+            return StatusCode.FAIL
 
     return wrapper
-
-
-def print_fail(do_what: str):
-    """
-    print fail message
-
-    @param do_what: fail describe
-    @return:
-    """
-    print(f"(Engine) FAIL -- {do_what}")
 
 
 class Engine:
@@ -78,18 +51,17 @@ class Engine:
 
     # activated variables, initialized after class construct,
     # should be UPDATED ON TIME every time they changed
-
-    __game_content: dict[int, Frame] = {}
-    __head: int = -1  # the head of the frame list
-    __tail: int = -1  # the tail of the frame list
-    __last_fid: int = -1  # the last used fid (frame id)
-    __all_fids: set[int] = set()  # all fids in list
+    __game_content: dict[int, BasicFrame] = {}
+    __head: int = BasicFrame.VOID_FRAME_ID  # the head of the frame list
+    __tail: int = BasicFrame.VOID_FRAME_ID  # the tail of the frame list
+    __last_fid: int = BasicFrame.VOID_FRAME_ID  # the last used fid (frame id)
+    __all_fids: set[int] = set()  # all fids in set
 
     def __init__(
         self,
         project_dir: str,
         config_dir: str,
-        game_file_name: str = DEFAULT_GAME_FILE_NAME,
+        game_file_name: Optional[str] = None,
     ):
         """
         constructor for engine
@@ -104,28 +76,37 @@ class Engine:
 
         # self.__project_dir = project_dir
         self.__config = ConfigLoader(config_dir=config_dir)
+        self.__engine_config = self.__config.engine()
 
-        self.__bg_base_dir = abs_dir(
-            project_dir, self.__config.resources()["background_dir"]
+        resource_config_raw = self.__config.resources()
+        resource_config_abs = {}
+        for k, v in resource_config_raw.items():
+            resource_config_abs[k] = abs_dir(project_dir, v)
+        self.__frame_checker = FrameChecker(
+            project_dir=project_dir, config=self.__config
         )
-        self.__music_base_dir = abs_dir(
-            project_dir, self.__config.resources()["music_dir"]
-        )
-        self.__chara_base_dir = abs_dir(
-            project_dir, self.__config.resources()["character_dir"]
-        )
+
+        if not game_file_name:
+            game_file_name = self.__config.engine()["default_game_file"]
         self.__game_file_dir = abs_dir(project_dir, game_file_name)
+
+        loader = self.__engine_config["loader"]
+        dumper = self.__engine_config["dumper"]
+        if hasattr(engine_io, loader) and hasattr(engine_io, dumper):
+            self.__loader = getattr(engine_io, loader)
+            self.__dumper = getattr(engine_io, dumper)
+        else:
+            raise EngineError("initialize fail due to cannot find loader/dumper")
 
         if check_file_valid(self.__game_file_dir):
             with open(self.__game_file_dir, "r", encoding="UTF-8") as file_stream:
-                game_content_raw = pickle.load(file_stream)
+                game_content_raw = self.__loader(file_stream)
             self.__metadata = game_content_raw[0]
             self.__game_content = game_content_raw[1]
             self.__last_fid = self.__metadata["last_fid"]
             self.__head = self.__metadata["head"]
             self.__tail = self.__metadata["tail"]
             self.__all_fids = set(self.__game_content.keys())
-            self.__update_metadata()
 
     @engine_exception_handler
     def __update_metadata(self):
@@ -142,77 +123,29 @@ class Engine:
         self.__metadata["tail"] = self.__tail
 
     @engine_exception_handler
-    def append_frame(
-        self,
-        bg_res: str,
-        chara_res: str,
-        chara_position: CharacterPosition,
-        music_status: MusicSignal,
-        dialogue: str,
-        dialogue_character: str = Args.OPTIONAL,
-        music_res: str = Args.OPTIONAL,
-    ):
+    def append_frame(self, frame: BasicFrame, force: bool = False) -> int:
         """
         add frame to the end of the frame list
 
-        @param bg_res: background resources name (not directory)
-        @param chara_res: character resources name (not directory)
-        @param chara_position: character position
-        @param dialogue: dialogue content
-        @param dialogue_character: dialogue from which character,
-        should be character resources name, if leave none, dialogue from VO
+        @param force: force push mode, ignore checking frame valid
+        @param frame: frame to be added
+        @return:  frame id
 
-        @param music_res: music resources name, signal cannot be PLAY when this item leave none
-        @param music_status: music play status for current frame
-        @return: added frame id
         """
+        # check frame
+        if not force:
+            check_output = self.__frame_checker.check(frame)
+            if check_output[0] == Frame:
+                raise EngineError(check_output[1])
 
-        # check if input resources valid or not
-        if not check_file_valid(abs_dir(self.__bg_base_dir, bg_res)):
-            raise EngineError(f"Background resource {bg_res} cannot find")
-
-        if not check_file_valid(abs_dir(self.__chara_base_dir, chara_res)):
-            raise EngineError(f"Character resource {chara_res} cannot find")
-
-        if not check_file_valid(abs_dir(self.__music_base_dir, music_res)):
-            raise EngineError(f"Music resource {bg_res} cannot find")
-
-        if music_status == MusicSignal.PLAY and not check_file_valid(
-            abs_dir(self.__music_base_dir, music_res)
-        ):
-            raise EngineError(f"Music resources {music_res} cannot find")
-
-        if (
-            dialogue_character != Args.OPTIONAL
-            and dialogue_character not in get_files_in_folder(self.__chara_base_dir)
-        ):
-            raise EngineError(f"Character {dialogue_character} cannot find")
-
-        # make the component
-        fid = self.__last_fid + 1
-        background = Background(res_name=bg_res)
-        character = Character(res_name=chara_res, position=chara_position)
-        music = Music(res_name=music_res, signal=music_status)
-
-        if dialogue_character == Args.OPTIONAL:
-            dialogue_chara = Character()
+        # generate the fid
+        if self.__last_fid == Frame.VOID_FRAME_ID:
+            fid = 0
         else:
-            dialogue_chara = Character(res_name=dialogue_character)
+            fid = self.__last_fid + 1
 
-        dialogue = Dialogue(dialogue=dialogue, character=dialogue_chara)
-        action = Action(next_f_id=Action.LAST_FRAME, prev_f_id=self.__tail)
-
-        frame = Frame(
-            fid=fid,
-            background=background,
-            chara=character,
-            music=music,
-            dialog=dialogue,
-            action=action,
-        )
-
-        # change the current last frame next frame pointer
-        if self.__last_fid != -1:
+        # change the current last frame's next frame pointer
+        if self.__last_fid != Frame.VOID_FRAME_ID:
             self.__game_content[self.__last_fid].action.change_next_f(next_f_id=fid)
 
         # update activated variables
@@ -221,7 +154,7 @@ class Engine:
         self.__all_fids.add(fid)
 
         # update head and tail
-        if self.__head == -1:
+        if self.__head == Frame.VOID_FRAME_ID:
             self.__head = fid
 
         self.__tail = fid
@@ -229,36 +162,61 @@ class Engine:
         return fid
 
     @engine_exception_handler
-    def move_frame(self, distinct_frame_id: int, from_frame_id: int) -> STATUS:
+    def insert_frame(self, dest_frame_id: int, from_frame_id: int):
         """
-        move the from_frame to the next of the distinct_frame
+        move the from_frame to the next of the dest_frame_id
 
-        @param distinct_frame_id: distinct frame id
+        @param dest_frame_id: distinct frame id
         @param from_frame_id: from which frame
-        @return: status of the action
+
         """
-        if distinct_frame_id in self.__all_fids and from_frame_id in self.__all_fids:
-            print_fail("frame not exist")
-            return STATUS.FAIL
+        if dest_frame_id not in self.__all_fids or from_frame_id not in self.__all_fids:
+            raise EngineError("insert fail, frame not exist")
 
         from_frame = self.__game_content[from_frame_id]
-        dist_frame = self.__game_content[distinct_frame_id]
+        dest_frame = self.__game_content[dest_frame_id]
 
-        self.__game_content[dist_frame.action.next_f].action.change_prev_f(
-            from_frame_id
-        )
-        self.__game_content[from_frame.action.prev_f].action.change_next_f(
-            from_frame.action.next_f
-        )
-        if self.__tail == from_frame_id:
-            self.__tail = from_frame.action.prev_f
+        from_frame.action.next_f = dest_frame.action.next_f
+        from_frame.action.prev_f = dest_frame_id
 
-        from_frame.action.change_prev_f(distinct_frame_id)
-        from_frame.action.change_next_f(dist_frame.action.next_f)
-        dist_frame.action.change_next_f(from_frame_id)
-        return STATUS.OK
+        if dest_frame.action.next_f != Frame.VOID_FRAME_ID:
+            self.__game_content[dest_frame.action.next_f].action.prev_f = from_frame
+        else:
+            self.__tail = from_frame_id
 
-    def commit(self) -> bool:
+        dest_frame.action.next_f = from_frame
+
+    @engine_exception_handler
+    def remove_frame(self, frame_id: int):
+        """
+        remove the frame from game content
+
+        @param frame_id: id of frame
+
+        """
+        if frame_id not in self.__all_fids:
+            raise EngineError("remove fail, frame not exist")
+
+        cur_frame = self.__game_content[frame_id]
+        if cur_frame.action.prev_f != Frame.VOID_FRAME_ID:
+            self.__game_content[
+                cur_frame.action.prev_f
+            ].action.next_f = cur_frame.action.next_f
+        else:
+            self.__head = cur_frame.action.next_f
+
+        if cur_frame.action.next_f != Frame.VOID_FRAME_ID:
+            self.__game_content[
+                cur_frame.action.next_f
+            ].action.prev_f = cur_frame.action.prev_f
+        else:
+            self.__tail = cur_frame.action.prev_f
+
+        # update metadata
+        self.__all_fids.remove(frame_id)
+
+    @engine_exception_handler
+    def commit(self):
         """
         commit all the change to the local game file
 
@@ -268,8 +226,6 @@ class Engine:
         game_content_raw = [self.__metadata, self.__game_content]
         try:
             with open(self.__game_file_dir, "w", encoding="UTF-8") as file_stream:
-                pickle.dump(game_content_raw, file_stream)
+                self.__dumper(game_content_raw, file_stream)
         except Exception as e_msg:
-            print_fail("fail to commit due to: " + str(e_msg))
-            return False
-        return True
+            raise EngineError("fail to commit due to: " + str(e_msg))

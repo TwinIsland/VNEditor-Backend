@@ -1,7 +1,8 @@
 """
 action component for frame
 """
-from .branch import BranchTree
+from engine.component.branch import BranchTree
+from typing import Optional
 
 
 class Action:
@@ -9,10 +10,8 @@ class Action:
     Frame attribute, guild the next step after current frame
     """
 
-    LAST_FRAME = -1
-
     def __init__(
-        self, next_f_id: int, prev_f_id: int, branch: BranchTree = BranchTree.DEFAULT
+        self, next_f_id: int, prev_f_id: int, branch: Optional[BranchTree] = None
     ):
         """
         constructor for Action
@@ -21,9 +20,9 @@ class Action:
         @param next_f_id: next frame id
         @param branch: special action, i.e. branch frame
         """
-        self.prev_f = prev_f_id
-        self.next_f = next_f_id
-        self.branch = branch
+        self.prev_f: int = prev_f_id
+        self.next_f: int = next_f_id
+        self.branch: BranchTree = branch
 
     def change_next_f(self, next_f_id: int):
         """
