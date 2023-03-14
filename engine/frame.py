@@ -14,28 +14,12 @@ class BasicFrame:
     base modal for frame
     """
 
-    VOID_FRAME_ID = -1  # indicate no frame
+    VOID_FRAME_ID = -1                                  # indicate no frame
+    VOID_ACTION = Action(VOID_FRAME_ID, VOID_FRAME_ID)  # indicate no action
 
     def __init__(self, fid: int, action: Action):
         self.fid: int = fid
         self.action: Action = action
-
-    def set_id(self, fid: int) -> None:
-        """
-        set frame id for current frame
-
-        @param fid: new fid
-        @return:
-        """
-        self.fid = fid
-
-    def get_id(self) -> int:
-        """
-        get the id for current frame
-
-        @return: frame id
-        """
-        return self.fid
 
 
 class Frame(BasicFrame):
@@ -47,7 +31,7 @@ class Frame(BasicFrame):
         self,
         fid: int,
         background: Background,
-        chara: Character,
+        chara: list[Character],
         music: Music,
         dialog: Dialogue,
         action: Action,
@@ -64,6 +48,6 @@ class Frame(BasicFrame):
         """
         super().__init__(fid, action)
         self.background: Background = background
-        self.chara: Character = chara
+        self.chara: list[Character] = chara
         self.music: Music = music
         self.dialog: Dialogue = dialog

@@ -37,23 +37,3 @@ class Character:
         """
         self.res_name: str = res_name
         self.position: CharacterPosition = position
-
-    def get_character(self) -> str:
-        """
-        getter for character resources
-
-        @return:
-        """
-        return self.res_name
-
-    def set_character(
-        self, res_name: str, position: CharacterPosition = Optional[CharacterPosition]
-    ):
-        """
-        setter for character
-        @param res_name: new resources name
-        @param position: new position for this character
-        @return:
-        """
-        self.res_name = res_name
-        self.position = position

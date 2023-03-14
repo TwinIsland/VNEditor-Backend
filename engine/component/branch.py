@@ -5,7 +5,7 @@ branch component for frame
 
 class BranchTree:
     """
-    Branch struct -- "El Psy Congroo!"
+    Branch struct
     """
 
     __branch_tree: dict = {int, str}

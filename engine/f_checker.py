@@ -1,3 +1,4 @@
+import os
 from engine.frame import BasicFrame, Frame
 from typing import Optional
 from engine.component.music import MusicSignal
@@ -8,9 +9,9 @@ from module.config_manager import ConfigLoader
 class FrameChecker:
     def __init__(self, project_dir: str, config: ConfigLoader):
         self.__project_dir = project_dir
-        self.__bg_base_dir = config.resources()["background_dir"]
-        self.__music_base_dir = config.resources()["music_dir"]
-        self.__chara_base_dir = config.resources()["character_dir"]
+        self.__bg_base_dir = os.path.join(self.__project_dir, config.resources()["background_dir"])
+        self.__music_base_dir = os.path.join(self.__project_dir, config.resources()["music_dir"])
+        self.__chara_base_dir = os.path.join(self.__project_dir, config.resources()["character_dir"])
 
     def check(self, frame: BasicFrame) -> list[bool, Optional[str]]:
         """
@@ -35,19 +36,21 @@ class FrameChecker:
         @return: status
 
         """
-        chara_position = frame.chara.position
-        chara_res = frame.chara.res_name
         bg_res = frame.background.res_name
         music_res = frame.music.res_name
         music_status = frame.music.signal
         dialogue_character = frame.dialog.character
 
         # check if contain conflict in input
-        if chara_position is not None and chara_res is None:
-            return [
-                False,
-                "character position cannot be defined is not given character",
-            ]
+        for character in frame.chara:
+            chara_position = character.position
+            chara_res = character.res_name
+
+            if chara_position is not None and chara_res is None:
+                return [
+                    False,
+                    "character position cannot be defined is not given character",
+                ]
 
         if music_res is None and music_status == MusicSignal.PLAY:
             return [False, "music resources have to specified when status set to play"]
@@ -56,9 +59,11 @@ class FrameChecker:
         if not check_file_valid(abs_dir(self.__bg_base_dir, bg_res)):
             return [False, f"Background resource {bg_res} cannot find"]
 
-        if chara_res is not None:
-            if not check_file_valid(abs_dir(self.__chara_base_dir, chara_res)):
-                return [False, f"Character resource {chara_res} cannot find"]
+        for character in frame.chara:
+            chara_res = character.res_name
+            if chara_res is not None:
+                if not check_file_valid(abs_dir(self.__chara_base_dir, chara_res)):
+                    return [False, f"Character resource {chara_res} cannot find"]
 
         if music_res is not None:
             if not check_file_valid(abs_dir(self.__music_base_dir, music_res)):
@@ -69,7 +74,9 @@ class FrameChecker:
                 return [False, f"Music resources {music_res} cannot find"]
 
         if dialogue_character is not None:
-            if check_file_valid(
+            if not check_file_valid(
                 abs_dir(self.__chara_base_dir, dialogue_character.res_name)
             ):
-                return [False, f"Character {dialogue_character} cannot find"]
+                return [False, f"Character resource {dialogue_character.res_name} cannot find"]
+
+        return [True, None]

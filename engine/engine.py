@@ -7,17 +7,17 @@ The Best Visual Novel Engine
 contain all basic information to build a visual novel
 """
 
-import os
 import time
-import engine_io
 
 from typing import Optional
 from module.exception import EngineError
 from module.config_manager import ConfigLoader
 from utils.file_utils import check_file_valid, check_folder_valid, abs_dir
 from utils.status import StatusCode
-from .frame import BasicFrame, Frame
-from .frame_checker import FrameChecker
+from engine.frame import BasicFrame
+from engine.f_checker import FrameChecker
+from engine.f_maker import FrameMaker
+import engine.eng_io as eng_io
 
 VERSION = "1.0.0"
 
@@ -58,10 +58,10 @@ class Engine:
     __all_fids: set[int] = set()  # all fids in set
 
     def __init__(
-        self,
-        project_dir: str,
-        config_dir: str,
-        game_file_name: Optional[str] = None,
+            self,
+            project_dir: str,
+            config_dir: str,
+            game_file_name: Optional[str] = None,
     ):
         """
         constructor for engine
@@ -89,18 +89,21 @@ class Engine:
         if not game_file_name:
             game_file_name = self.__config.engine()["default_game_file"]
         self.__game_file_dir = abs_dir(project_dir, game_file_name)
+        self.__frame_maker = FrameMaker()
 
         loader = self.__engine_config["loader"]
         dumper = self.__engine_config["dumper"]
-        if hasattr(engine_io, loader) and hasattr(engine_io, dumper):
-            self.__loader = getattr(engine_io, loader)
-            self.__dumper = getattr(engine_io, dumper)
+        if hasattr(eng_io, loader) and hasattr(eng_io, dumper):
+            self.__loader = getattr(eng_io, loader)
+            self.__dumper = getattr(eng_io, dumper)
         else:
             raise EngineError("initialize fail due to cannot find loader/dumper")
 
         if check_file_valid(self.__game_file_dir):
-            with open(self.__game_file_dir, "r", encoding="UTF-8") as file_stream:
-                game_content_raw = self.__loader(file_stream)
+            try:
+                game_content_raw = self.__loader(self.__game_file_dir)
+            except Exception as e:
+                raise EngineError(f"fail to load game file due to {str(e)}") from e
             self.__metadata = game_content_raw[0]
             self.__game_content = game_content_raw[1]
             self.__last_fid = self.__metadata["last_fid"]
@@ -123,6 +126,14 @@ class Engine:
         self.__metadata["tail"] = self.__tail
 
     @engine_exception_handler
+    def make_frame(self, _type: type, **kwargs) -> BasicFrame:
+        frame = self.__frame_maker.make(_type, **kwargs)
+
+        if frame is None:
+            raise EngineError("make frame failed")
+
+        return frame
+
     def append_frame(self, frame: BasicFrame, force: bool = False) -> int:
         """
         add frame to the end of the frame list
@@ -135,18 +146,19 @@ class Engine:
         # check frame
         if not force:
             check_output = self.__frame_checker.check(frame)
-            if check_output[0] == Frame:
+            if not check_output[0]:
                 raise EngineError(check_output[1])
 
         # generate the fid
-        if self.__last_fid == Frame.VOID_FRAME_ID:
+        if self.__last_fid == BasicFrame.VOID_FRAME_ID:
             fid = 0
         else:
             fid = self.__last_fid + 1
+        frame.fid = fid
 
         # change the current last frame's next frame pointer
-        if self.__last_fid != Frame.VOID_FRAME_ID:
-            self.__game_content[self.__last_fid].action.change_next_f(next_f_id=fid)
+        if self.__last_fid != BasicFrame.VOID_FRAME_ID:
+            self.__game_content[self.__last_fid].action.next_f = fid
 
         # update activated variables
         self.__game_content[fid] = frame
@@ -154,7 +166,7 @@ class Engine:
         self.__all_fids.add(fid)
 
         # update head and tail
-        if self.__head == Frame.VOID_FRAME_ID:
+        if self.__head == BasicFrame.VOID_FRAME_ID:
             self.__head = fid
 
         self.__tail = fid
@@ -164,22 +176,46 @@ class Engine:
     @engine_exception_handler
     def insert_frame(self, dest_frame_id: int, from_frame_id: int):
         """
-        move the from_frame to the next of the dest_frame_id
+        move the from_frame to the next of the dest_frame_id,
+        if dest frame is VOID_FRAME_ID, then move to the head
 
         @param dest_frame_id: distinct frame id
         @param from_frame_id: from which frame
 
         """
+        if dest_frame_id == BasicFrame.VOID_FRAME_ID:
+            # edge case, add frame to the head
+            from_frame = self.__game_content[from_frame_id]
+            if from_frame.action.prev_f != BasicFrame.VOID_FRAME_ID:
+                self.__game_content[
+                    from_frame.action.prev_f
+                ].action.next_f = from_frame.action.next_f
+            else:
+                return
+            if from_frame.action.next_f != BasicFrame.VOID_FRAME_ID:
+                self.__game_content[
+                    from_frame.action.next_f
+                ].action.prev_f = from_frame.action.prev_f
+            else:
+                self.__tail = from_frame.action.prev_f
+            from_frame.action.next_f = self.__head
+            self.__game_content[self.__head].action.prev_f = from_frame_id
+            self.__head = from_frame_id
+            return
+
         if dest_frame_id not in self.__all_fids or from_frame_id not in self.__all_fids:
             raise EngineError("insert fail, frame not exist")
 
         from_frame = self.__game_content[from_frame_id]
         dest_frame = self.__game_content[dest_frame_id]
 
+        if from_frame == self.__head:
+            self.__head = from_frame.action.next_f
+
         from_frame.action.next_f = dest_frame.action.next_f
         from_frame.action.prev_f = dest_frame_id
 
-        if dest_frame.action.next_f != Frame.VOID_FRAME_ID:
+        if dest_frame.action.next_f != BasicFrame.VOID_FRAME_ID:
             self.__game_content[dest_frame.action.next_f].action.prev_f = from_frame
         else:
             self.__tail = from_frame_id
@@ -198,14 +234,14 @@ class Engine:
             raise EngineError("remove fail, frame not exist")
 
         cur_frame = self.__game_content[frame_id]
-        if cur_frame.action.prev_f != Frame.VOID_FRAME_ID:
+        if cur_frame.action.prev_f != BasicFrame.VOID_FRAME_ID:
             self.__game_content[
                 cur_frame.action.prev_f
             ].action.next_f = cur_frame.action.next_f
         else:
             self.__head = cur_frame.action.next_f
 
-        if cur_frame.action.next_f != Frame.VOID_FRAME_ID:
+        if cur_frame.action.next_f != BasicFrame.VOID_FRAME_ID:
             self.__game_content[
                 cur_frame.action.next_f
             ].action.prev_f = cur_frame.action.prev_f
@@ -214,6 +250,16 @@ class Engine:
 
         # update metadata
         self.__all_fids.remove(frame_id)
+
+    def change_frame(self, frame_id: int, frame: BasicFrame):
+        """
+        change the frame id by new frame
+
+        @param frame_id:
+        @param frame:
+
+        """
+        self.__game_content[frame_id] = frame
 
     @engine_exception_handler
     def commit(self):
@@ -225,7 +271,6 @@ class Engine:
         self.__update_metadata()
         game_content_raw = [self.__metadata, self.__game_content]
         try:
-            with open(self.__game_file_dir, "w", encoding="UTF-8") as file_stream:
-                self.__dumper(game_content_raw, file_stream)
-        except Exception as e_msg:
-            raise EngineError("fail to commit due to: " + str(e_msg))
+            self.__dumper(game_content_raw, self.__game_file_dir)
+        except Exception as e:
+            raise EngineError(f"fail to dump game file due to: {str(e)}") from e
