@@ -14,7 +14,7 @@ class BasicFrame:
     base modal for frame
     """
 
-    VOID_FRAME_ID = -1                                  # indicate no frame
+    VOID_FRAME_ID = -1  # indicate no frame
     VOID_ACTION = Action(VOID_FRAME_ID, VOID_FRAME_ID)  # indicate no action
 
     def __init__(self, fid: int, action: Action):

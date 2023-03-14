@@ -58,10 +58,10 @@ class Engine:
     __all_fids: set[int] = set()  # all fids in set
 
     def __init__(
-            self,
-            project_dir: str,
-            config_dir: str,
-            game_file_name: Optional[str] = None,
+        self,
+        project_dir: str,
+        config_dir: str,
+        game_file_name: Optional[str] = None,
     ):
         """
         constructor for engine
