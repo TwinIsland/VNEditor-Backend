@@ -33,5 +33,5 @@ class FrameMaker:
             dialog: Dialogue,
     ):
         return Frame(
-            Frame.VOID_FRAME_ID, background, chara, music, dialog, Frame.VOID_ACTION
+            Frame.VOID_FRAME_ID, background, chara, music, dialog
         )
