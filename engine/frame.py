@@ -14,6 +14,7 @@ class BasicFrame:
     """
     base modal for frame
     """
+
     VOID_FRAME_ID = -1  # indicate no frame
 
     def __init__(self, fid: int, action: Optional[Action] = None):
@@ -30,13 +31,13 @@ class Frame(BasicFrame):
     """
 
     def __init__(
-            self,
-            fid: int,
-            background: Background,
-            chara: list[Character],
-            music: Music,
-            dialog: Dialogue,
-            action: Optional[Action] = None,
+        self,
+        fid: int,
+        background: Background,
+        chara: list[Character],
+        music: Music,
+        dialog: Dialogue,
+        action: Optional[Action] = None,
     ):
         """
         constructor for frame class

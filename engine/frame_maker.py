@@ -27,11 +27,9 @@ class FrameMaker:
 
     @staticmethod
     def __make_frame(
-            background: Background,
-            chara: list[Character],
-            music: Music,
-            dialog: Dialogue,
+        background: Background,
+        chara: list[Character],
+        music: Music,
+        dialog: Dialogue,
     ):
-        return Frame(
-            Frame.VOID_FRAME_ID, background, chara, music, dialog
-        )
+        return Frame(Frame.VOID_FRAME_ID, background, chara, music, dialog)

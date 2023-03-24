@@ -25,11 +25,11 @@ class Dialogue:
         """
         getter for dialogue
 
-        @return:
+        @return: dialogue string and character
         """
         return self.dialogue, self.character
 
-    def set_dialogue(self, dialogue: str, character: Character = Optional[Character]):
+    def set_dialogue(self, dialogue: str, character: Optional[Character] = None):
         """
         setter for dialogue
 
