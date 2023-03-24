@@ -2,8 +2,8 @@
 dialogue component for frame
 """
 
-from .character import Character
 from typing import Optional
+from .character import Character
 
 
 class Dialogue:

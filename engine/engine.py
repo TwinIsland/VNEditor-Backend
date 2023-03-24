@@ -8,10 +8,10 @@ contain all basic information to build a visual novel
 """
 
 import time
-from packaging import version
-
 from typing import Optional
 from functools import wraps
+from packaging import version
+
 from module.exception import EngineError
 from module.config_manager import ConfigLoader
 from utils.file_utils import check_file_valid, check_folder_valid, abs_dir
@@ -37,6 +37,7 @@ def engine_exception_handler(func):
     @param func: function to be decorated
 
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -229,7 +230,7 @@ class Engine:
         @param from_frame_id: append what frame
 
         """
-        if dest_frame_id not in self.__all_fids or from_frame_id not in self.__all_fids:
+        if from_frame_id not in self.__all_fids:
             raise EngineError("prepend fail, frame not exist")
 
         if self.__head == from_frame_id:

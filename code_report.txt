@@ -1,30 +1,10 @@
-Generated In: 2023/03/24 周五 16:36:05.17
+Generated In: 2023/03/24 周五 16:47:42.90
 LINTER REPORT
 
 check ./engine
-************* Module engine.engine
-engine\engine.py:233:11: E0602: Undefined variable 'dest_frame_id' (undefined-variable)
-engine\engine.py:13:0: C0411: standard import "from typing import Optional" should be placed before "from packaging import version" (wrong-import-order)
-engine\engine.py:14:0: C0411: standard import "from functools import wraps" should be placed before "from packaging import version" (wrong-import-order)
-************* Module engine.frame_checker
-engine\frame_checker.py:1:0: C0114: Missing module docstring (missing-module-docstring)
-engine\frame_checker.py:9:0: C0115: Missing class docstring (missing-class-docstring)
-engine\frame_checker.py:37:4: R0911: Too many return statements (8/6) (too-many-return-statements)
-engine\frame_checker.py:3:0: C0411: standard import "from typing import Optional" should be placed before "from engine.frame import BasicFrame, Frame" (wrong-import-order)
-************* Module engine.frame_maker
-engine\frame_maker.py:1:0: C0114: Missing module docstring (missing-module-docstring)
-engine\frame_maker.py:8:0: C0115: Missing class docstring (missing-class-docstring)
-engine\frame_maker.py:19:8: R1705: Unnecessary "else" after "return", remove the "else" and de-indent the code inside it (no-else-return)
-engine\frame_maker.py:26:15: C0123: Use isinstance() rather than type() for a typecheck. (unidiomatic-typecheck)
-************* Module engine.component.action
-engine\component\action.py:5:0: C0411: standard import "from typing import Optional" should be placed before "from engine.component.branch import BranchTree" (wrong-import-order)
-************* Module engine.component.branch
-engine\component\branch.py:12:45: R1735: Consider using '{}' instead of a call to 'dict'. (use-dict-literal)
-************* Module engine.component.dialogue
-engine\component\dialogue.py:6:0: C0411: standard import "from typing import Optional" should be placed before "from .character import Character" (wrong-import-order)
 
-------------------------------------------------------------------
-Your code has been rated at 9.45/10 (previous run: 9.45/10, +0.00)
+-------------------------------------------------------------------
+Your code has been rated at 10.00/10 (previous run: 9.45/10, +0.55)
 
 check ./module
 
@@ -53,48 +33,52 @@ empty
 ----------------------------------------
        time              progress
 ----------------------------------------
-1679693770.26436          12
+1679694467.89639          12
 ----------------------------------------
 ----------------------------------------
        time              progress
 ----------------------------------------
-1679693770.26436          12
+1679694467.89639          12
 ...
 ----------------------------------------
 ----------------------------------------
        time              progress
 ----------------------------------------
-1679693770.26436          12
+1679694467.89639          12
 ----------------------------------------
-{'engine_name': 'YuiEngine', 'engine_version': '1.0.0', 'engine_minimal_compatible': '1.0.0', 'update_at': 1679693683.1976216, 'total_frame_len': 4, 'last_fid': 113, 'head': 92, 'tail': 113}
+{'engine_name': 'YuiEngine', 'engine_version': '1.0.0', 'engine_minimal_compatible': '1.0.0', 'update_at': 1679693770.4351969, 'total_frame_len': 6, 'last_fid': 122, 'head': 92, 'tail': 122}
 {1: 'choice 1'}
-add frame:  114
-add frame:  115
-add frame:  116
-add frame:  117
-add frame:  118
-add frame:  119
-add frame:  120
-add frame:  121
-add frame:  122
 add frame:  123
+add frame:  124
+add frame:  125
+add frame:  126
+add frame:  127
+add frame:  128
+add frame:  129
+add frame:  130
+add frame:  131
+add frame:  132
 head id: 92
-remove id: 104
-remove id: 113
-remove id: 116
-remove id: 117
-remove id: 118
-remove id: 119
-remove id: 121
-{'engine_name': 'YuiEngine', 'engine_version': '1.0.0', 'engine_minimal_compatible': '1.0.0', 'update_at': 1679693770.4341955, 'total_frame_len': 7, 'last_fid': 123, 'head': 92, 'tail': 123}
-110 <engine.frame.Frame object at 0x000002CEE6E5EFD0>
-114 <engine.frame.Frame object at 0x000002CEE6E5F810>
-115 <engine.frame.Frame object at 0x000002CEE6E5F950>
-120 <engine.frame.Frame object at 0x000002CEE6E5FB90>
-122 <engine.frame.Frame object at 0x000002CEE6E5FC90>
-123 <engine.frame.Frame object at 0x000002CEE6E5FD10>
-92 <engine.frame.Frame object at 0x000002CEE6E5DC50>
+remove id: 128
+remove id: 130
+remove id: 131
+remove id: 132
+remove id: 124
+remove id: 120
+remove id: 122
+remove id: 92
+{'engine_name': 'YuiEngine', 'engine_version': '1.0.0', 'engine_minimal_compatible': '1.0.0', 'update_at': 1679694468.0669732, 'total_frame_len': 8, 'last_fid': 129, 'head': 110, 'tail': 129}
+129 <engine.frame.Frame object at 0x000001AA5AEA43D0>
+110 <engine.frame.Frame object at 0x000001AA5AE86950>
+114 <engine.frame.Frame object at 0x000001AA5AE87110>
+115 <engine.frame.Frame object at 0x000001AA5AE878D0>
+123 <engine.frame.Frame object at 0x000001AA5AEA4210>
+125 <engine.frame.Frame object at 0x000001AA5AEA4310>
+126 <engine.frame.Frame object at 0x000001AA5AEA42D0>
+127 <engine.frame.Frame object at 0x000001AA5AEA4410>
+remove id: 110
 remove id: 123
+remove id: 125
 Name                                                                     Stmts   Miss  Cover   Missing
 ------------------------------------------------------------------------------------------------------
 C:\Users\Twisl\Desktop\VNEditor Service\engine\__init__.py                   0      0   100%
@@ -108,8 +92,8 @@ C:\Users\Twisl\Desktop\VNEditor Service\engine\component\music.py           16  
 C:\Users\Twisl\Desktop\VNEditor Service\engine\engine.py                   194     50    74%   48-49, 87, 111, 115-116, 123, 131, 138, 178, 196, 200, 219, 233-253, 266-287, 298, 319, 331, 349, 361, 372, 392, 404, 415, 429-430
 C:\Users\Twisl\Desktop\VNEditor Service\engine\engine_io.py                  7      0   100%
 C:\Users\Twisl\Desktop\VNEditor Service\engine\frame.py                     20      0   100%
-C:\Users\Twisl\Desktop\VNEditor Service\engine\frame_checker.py             45     10    78%   35, 56, 62, 66, 72, 75-76, 79-80, 86
-C:\Users\Twisl\Desktop\VNEditor Service\engine\frame_maker.py               16      1    94%   22
+C:\Users\Twisl\Desktop\VNEditor Service\engine\frame_checker.py             45      8    82%   72, 76, 85-86, 89-90, 93-96
+C:\Users\Twisl\Desktop\VNEditor Service\engine\frame_maker.py               16      0   100%
 C:\Users\Twisl\Desktop\VNEditor Service\module\__init__.py                   0      0   100%
 C:\Users\Twisl\Desktop\VNEditor Service\module\config_manager.py            25      0   100%
 C:\Users\Twisl\Desktop\VNEditor Service\module\db_manager.py                57      3    95%   147-148, 158
@@ -124,4 +108,4 @@ test_engine.py                                                              55  
 test_file_utils.py                                                          35      0   100%
 test_game_slot.py                                                           39      0   100%
 ------------------------------------------------------------------------------------------------------
-TOTAL                                                                      765     65    92%
+TOTAL                                                                      765     62    92%

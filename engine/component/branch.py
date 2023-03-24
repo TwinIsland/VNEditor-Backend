@@ -9,7 +9,7 @@ class BranchTree:
     """
 
     def __init__(self):
-        self.__branch_tree: dict[int, str] = dict()
+        self.__branch_tree: dict[int, str] = {}
 
     def add_branch(self, corresponding_frame_id: int, description: str):
         """

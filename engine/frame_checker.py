@@ -1,12 +1,22 @@
+"""
+Frame Checker class, if you implement your own frame, please also implement the checker here
+"""
+
 import os
-from engine.frame import BasicFrame, Frame
 from typing import Optional
+
+from engine.frame import BasicFrame, Frame
 from engine.component.music import MusicSignal
 from utils.file_utils import check_file_valid, abs_dir
 from module.config_manager import ConfigLoader
 
 
 class FrameChecker:
+    """
+    frame checker class
+
+    """
+
     def __init__(self, project_dir: str, config: ConfigLoader):
         self.__project_dir = project_dir
         self.__bg_base_dir = os.path.join(
