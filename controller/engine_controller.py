@@ -1,18 +1,12 @@
-import os
-
 from functools import wraps
-from fastapi import UploadFile
 
-from engine.engine import Engine
-from module.project_manager import ProjectManager, ResourcesType
 from module.config_manager import ConfigLoader
 from utils.exception import ControllerException
 from utils.status import StatusCode
-from utils.file_utils import check_file_valid
-
 from utils.return_type import ReturnList, ReturnDict, ReturnStatus
 
 from .project_controller import Task
+from engine.frame import Frame, FrameModel
 
 
 def engine_controller_exception_handler(func):
@@ -50,5 +44,59 @@ class EngineController:
         self.__engine_config: dict = config_loader.engine()
 
     @engine_controller_exception_handler
-    def get_frames(self, task: Task):
-        engine = 1
+    def get_frame(self, task: Task, fid: int) -> ReturnDict:
+        """
+        get frame by frame id
+
+        @param task: current task
+        @param fid: frame id
+        @return: dictionary contain frame information
+
+        """
+        engine = task.project_engine
+        frame = engine.get_frame(fid)
+        return ReturnDict(status=StatusCode.OK, content=frame.__dict__)
+
+    @engine_controller_exception_handler
+    def get_frame_id(self, task: Task) -> ReturnList:
+        """
+        get all frame id
+
+        @param task:
+        @return: list of ordered frame id
+
+        """
+        engine = task.project_engine
+        fids = engine.get_ordered_fid()
+        if fids == StatusCode.FAIL:
+            raise ControllerException("get frame id fails")
+
+        return ReturnList(status=StatusCode.OK, content=fids)
+
+    @engine_controller_exception_handler
+    def get_engine_meta(self, task: Task) -> ReturnDict:
+        """
+        get the metadata for engine
+
+        @return: metadata for engine
+
+        """
+        engine = task.project_engine
+        return ReturnDict(status=StatusCode.OK, content=engine.get_engine_meta())
+
+    @engine_controller_exception_handler
+    def append_frame(self, task: Task, frame_component_raw: FrameModel) -> ReturnList:
+        """
+        append frame: Frame into game content
+
+        @return: metadata for engine
+
+        """
+        engine = task.project_engine
+        frame_component = frame_component_raw.to_frame().__dict__
+        frame = engine.make_frame(_type=type(Frame), **frame_component)
+        fid = engine.append_frame(frame)
+        if fid == StatusCode.FAIL:
+            return ReturnList(status=StatusCode.FAIL)
+        else:
+            return ReturnList(status=StatusCode.OK, content=[fid])

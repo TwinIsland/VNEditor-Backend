@@ -5,8 +5,8 @@ The Best Visual Novel Engine
 ----------------------------
 
 contain all basic information to build a visual novel
-"""
 
+"""
 import time
 from typing import Optional
 from functools import wraps
@@ -16,10 +16,9 @@ from utils.exception import EngineError
 from module.config_manager import ConfigLoader
 from utils.file_utils import check_file_valid, check_folder_valid, abs_dir
 from utils.status import StatusCode
-from engine.frame import BasicFrame
-from engine.frame_checker import FrameChecker
-from engine.frame_maker import FrameMaker
+from engine.frame import BasicFrame, Frame, FrameChecker
 import engine.engine_io as eng_io
+from engine.component import *
 
 # the version of the engine
 ENGINE_NAME = "YuiEngine"
@@ -100,7 +99,6 @@ class Engine:
         if not game_file_name:
             game_file_name = self.__config.engine()["default_game_file"]
         self.__game_file_dir = abs_dir(project_dir, game_file_name)
-        self.__frame_maker = FrameMaker()
 
         loader = self.__engine_config["loader"]
         dumper = self.__engine_config["dumper"]
@@ -163,20 +161,18 @@ class Engine:
         self.__metadata_buffer["tail"] = self.__tail
 
     @engine_exception_handler
-    def make_frame(self, _type: type, **kwargs) -> BasicFrame:
+    def make_frame(self, background: Background, chara: list[Character], music: Music, dialog: Dialogue,) -> BasicFrame:
         """
         make a frame
 
-        @param _type: the Frame Type
-        @param kwargs: parameters to construct the frame
+        @param background: background
+        @param chara: character
+        @param music: music
+        @param dialog: dialog
         @return: result frame
 
         """
-        frame = self.__frame_maker.make(_type, **kwargs)
-
-        if frame is None:
-            raise EngineError("make frame failed")
-
+        frame = Frame(Frame.VOID_FRAME_ID, background, chara, music, dialog)
         return frame
 
     @engine_exception_handler
@@ -221,6 +217,27 @@ class Engine:
         self.__tail = fid
 
         return fid
+
+    @engine_exception_handler
+    def get_ordered_fid(self) -> list:
+        """
+        return a ordered frame id
+
+        @return: ordered fid
+
+        """
+        if self.__head == BasicFrame.VOID_FRAME_ID:
+            return []
+
+        ordered_id = [self.__head]
+        while 1:
+            cur = ordered_id[-1]
+            next_fid = self.get_frame(cur).action.next_f
+            if next_fid == BasicFrame.VOID_FRAME_ID:
+                break
+            ordered_id.append(next_fid)
+
+        return ordered_id
 
     @engine_exception_handler
     def prepend_frame(self, from_frame_id: int):
@@ -405,14 +422,17 @@ class Engine:
         return self.__metadata_buffer
 
     @engine_exception_handler
-    def get_engine_version(self) -> str:
+    def get_engine_meta(self) -> dict:
         """
         get version of current engine
 
-        @return: version of engine
+        @return: metadata of engine
 
         """
-        return ENGINE_VERSION
+        return {
+            "version": ENGINE_VERSION,
+            "name": ENGINE_NAME,
+        }
 
     @engine_exception_handler
     def commit(self):
