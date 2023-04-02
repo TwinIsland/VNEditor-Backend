@@ -85,7 +85,9 @@ class EngineController:
         return ReturnDict(status=StatusCode.OK, content=engine.get_engine_meta())
 
     @engine_controller_exception_handler
-    def append_frame(self, task: Task, frame_component_raw: FrameModel) -> ReturnList:
+    def append_frame(
+        self, task: Task, frame_component_raw: FrameModel, force=False
+    ) -> ReturnList:
         """
         append frame: Frame into game content
 
@@ -94,9 +96,43 @@ class EngineController:
         """
         engine = task.project_engine
         frame_component = frame_component_raw.to_frame().__dict__
-        frame = engine.make_frame(_type=type(Frame), **frame_component)
-        fid = engine.append_frame(frame)
+        frame_component.pop("fid")
+        frame_component.pop("action")
+        frame = engine.make_frame(**frame_component)
+        fid = engine.append_frame(frame, force)
         if fid == StatusCode.FAIL:
             return ReturnList(status=StatusCode.FAIL)
         else:
             return ReturnList(status=StatusCode.OK, content=[fid])
+
+    @engine_controller_exception_handler
+    def commit(self, task: Task) -> ReturnStatus:
+        """
+        commit all changes
+
+        @param task: current task
+        @return: status
+
+        """
+        engine = task.project_engine
+        status = engine.commit()
+        if status == StatusCode.FAIL:
+            return ReturnStatus(status=StatusCode.FAIL, msg="fail to commit changes")
+
+        return ReturnStatus(status=StatusCode.OK)
+
+    @engine_controller_exception_handler
+    def get_metadata(self, task: Task) -> ReturnDict:
+        """
+        get game content metadata buffer
+
+        @param task: current task
+        @return: status
+
+        """
+        engine = task.project_engine
+        meta_buffer = engine.get_metadata_buffer()
+        if meta_buffer is None:
+            return ReturnDict(status=StatusCode.OK, content=[])
+
+        return ReturnDict(status=StatusCode.OK, content=meta_buffer)

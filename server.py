@@ -259,7 +259,7 @@ async def upload_files(
     return resources_utils.upload_files(task=task, rtype=rtype, files=files)
 
 
-@app.post("/get_fids", tags=["engine"])
+@app.post("/engine/get_fids", tags=["engine"])
 async def get_fids(task_id: str) -> ReturnList:
     """
     get fids corresponding to the task id
@@ -274,7 +274,7 @@ async def get_fids(task_id: str) -> ReturnList:
     return engine_utils.get_frame_id(task)
 
 
-@app.post("/engine_meta", tags=["engine"])
+@app.post("/engine/engine_meta", tags=["engine"])
 async def engine_meta(task_id: str) -> ReturnDict:
     """
     get fids corresponding to the task id
@@ -289,11 +289,14 @@ async def engine_meta(task_id: str) -> ReturnDict:
     return engine_utils.get_engine_meta(task)
 
 
-@app.post("/append_frame", tags=["engine"])
-async def append_frame(task_id: str, frame_component_raw: FrameModel) -> ReturnList:
+@app.post("/engine/append_frame", tags=["engine"])
+async def append_frame(
+    task_id: str, frame_component_raw: FrameModel, force: bool = False
+) -> ReturnList:
     """
     get fids corresponding to the task id
 
+    @param force: force appending frame without check frame valid
     @param frame_component_raw: raw frane component
     @param task_id: id for task
 
@@ -302,4 +305,22 @@ async def append_frame(task_id: str, frame_component_raw: FrameModel) -> ReturnL
     if task is None:
         return ReturnList(status=StatusCode.FAIL, msg="no such task id")
 
-    return engine_utils.append_frame(task, frame_component_raw)
+    return engine_utils.append_frame(task, frame_component_raw, force)
+
+
+@app.post("/engine/commit", tags=["engine"])
+async def commit(task_id: str) -> ReturnStatus:
+    task = project_utils.get_task(task_id)
+    if task is None:
+        return ReturnStatus(status=StatusCode.FAIL, msg="no such task id")
+
+    return engine_utils.commit(task)
+
+
+@app.post("/engine/meta", tags=["engine"])
+async def commit(task_id: str) -> ReturnDict:
+    task = project_utils.get_task(task_id)
+    if task is None:
+        return ReturnDict(status=StatusCode.FAIL, msg="no such task id")
+
+    return engine_utils.get_metadata(task)

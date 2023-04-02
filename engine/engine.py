@@ -161,7 +161,13 @@ class Engine:
         self.__metadata_buffer["tail"] = self.__tail
 
     @engine_exception_handler
-    def make_frame(self, background: Background, chara: list[Character], music: Music, dialog: Dialogue,) -> BasicFrame:
+    def make_frame(
+        self,
+        background: Background,
+        chara: list[Character],
+        music: Music,
+        dialog: Dialogue,
+    ) -> BasicFrame:
         """
         make a frame
 
@@ -189,7 +195,7 @@ class Engine:
         if not force:
             check_output = self.__frame_checker.check(frame)
             if not check_output[0]:
-                raise EngineError(check_output[1])
+                raise EngineError(f"Frame invalid: {check_output[1]}")
 
         # generate the fid
         if self.__last_fid == BasicFrame.VOID_FRAME_ID:
@@ -411,7 +417,7 @@ class Engine:
     @engine_exception_handler
     def get_metadata_buffer(self) -> dict[dict, dict] | None:
         """
-        get the current meta buffer, WARNING, this method
+        get the current meta buffer, WARNING: this method
         return the buffered metadata, might not be up-to-date
 
         @return: metadata in buffer
@@ -435,7 +441,7 @@ class Engine:
         }
 
     @engine_exception_handler
-    def commit(self):
+    def commit(self) -> StatusCode:
         """
         commit all the change to the local game file
 
@@ -448,3 +454,4 @@ class Engine:
             self.__dumper(game_content_raw, self.__game_file_dir)
         except Exception as e:
             raise EngineError(f"fail to dump game file due to: {str(e)}") from e
+        return StatusCode.OK
