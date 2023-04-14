@@ -12,18 +12,18 @@ from typing import Optional
 from functools import wraps
 from packaging import version
 
-from utils.exception import EngineError
 from module.config_manager import ConfigLoader
 from utils.file_utils import check_file_valid, check_folder_valid, abs_dir
 from utils.status import StatusCode
+from utils.exception import EngineError
 from engine.frame import Frame, FrameChecker
 import engine.engine_io as eng_io
-from engine.component import *
+from engine.component import Background, Character, Dialogue, Music, FrameMeta
 
 # the version of the engine
 ENGINE_NAME = "YuiEngine"
-ENGINE_VERSION = "1.0.0"
-ENGINE_MINIMAL_COMPATIBLE = "1.0.0"
+ENGINE_VERSION = "1.0.1"
+ENGINE_MINIMAL_COMPATIBLE = "1.0.1"
 
 # debug mode
 DEBUG_MODE = True
@@ -63,6 +63,7 @@ class Engine:
     # activated variables, initialized after class construct,
     # should be UPDATED ON TIME every time they changed
     __game_content: dict[int, Frame] = {}
+    __frame_meta: dict[str, list] = {}  # meta data for frames
     __head: int = Frame.VOID_FRAME_ID  # the head of the frame list
     __tail: int = Frame.VOID_FRAME_ID  # the tail of the frame list
     __last_fid: int = Frame.VOID_FRAME_ID  # the last used fid (frame id)
@@ -114,7 +115,7 @@ class Engine:
                 raise EngineError(f"fail to load game file due to {str(e)}") from e
             self.__metadata_buffer = game_content_raw[0]
 
-            # check game file incompatibility
+            # check game file compatibility
             cur_engine_name = self.__metadata_buffer["engine_name"]
             cur_engine_version = self.__metadata_buffer["engine_version"]
             if self.__metadata_buffer["engine_name"] != ENGINE_NAME:
@@ -138,8 +139,11 @@ class Engine:
                     f"mismatched with game file ({cur_engine_version})"
                 )
 
-            # load metadata
+            # load game content and frame description
             self.__game_content = game_content_raw[1]
+            self.__frame_meta = game_content_raw[2]
+
+            # load metadata
             self.__last_fid = self.__metadata_buffer["last_fid"]
             self.__head = self.__metadata_buffer["head"]
             self.__tail = self.__metadata_buffer["tail"]
@@ -167,10 +171,12 @@ class Engine:
         chara: list[Character],
         music: Music,
         dialog: Dialogue,
+        meta: FrameMeta,
     ) -> Frame:
         """
         make a frame
 
+        @param meta: frame meta
         @param background: background
         @param chara: character
         @param music: music
@@ -178,7 +184,7 @@ class Engine:
         @return: result frame
 
         """
-        frame = Frame(Frame.VOID_FRAME_ID, background, chara, music, dialog)
+        frame = Frame(Frame.VOID_FRAME_ID, background, chara, music, dialog, None, meta)
         return frame
 
     @engine_exception_handler
@@ -213,6 +219,12 @@ class Engine:
 
         # update activated variables
         self.__game_content[fid] = frame
+
+        if frame.meta.chapter not in self.__frame_meta:
+            self.__frame_meta[frame.meta.chapter] = [(fid, frame.meta.name)]
+        else:
+            self.__frame_meta[frame.meta.chapter].append((fid, frame.meta.name))
+
         self.__last_fid = fid
         self.__all_fids.add(fid)
 
@@ -245,70 +257,6 @@ class Engine:
 
         return ordered_id
 
-    # @engine_exception_handler
-    # def prepend_frame(self, from_frame_id: int):
-    #     """
-    #     prepend frame to the beginning of the list
-    #
-    #     @param from_frame_id: append what frame
-    #
-    #     """
-    #     if from_frame_id not in self.__all_fids:
-    #         raise EngineError("prepend fail, frame not exist")
-    #
-    #     if self.__head == from_frame_id:
-    #         return
-    #
-    #     from_frame = self.__game_content[from_frame_id]
-    #
-    #     if from_frame_id != self.__tail:
-    #         self.__game_content[
-    #             from_frame.action.next_f
-    #         ].action.prev_f = from_frame.action.prev_f
-    #     else:
-    #         self.__tail = from_frame.action.prev_f
-    #
-    #     self.__game_content[
-    #         from_frame.action.prev_f
-    #     ].action.next_f = from_frame.action.next_f
-    #
-    #     from_frame.action.prev_f = BasicFrame.VOID_FRAME_ID
-    #     from_frame.action.next_f = self.__head
-    #
-    # @engine_exception_handler
-    # def insert_frame(self, dest_frame_id: int, from_frame_id: int):
-    #     """
-    #     move the from_frame to the next of the dest_frame_id,
-    #     if dest frame is VOID_FRAME_ID, then move to the head
-    #
-    #     @param dest_frame_id: distinct frame id
-    #     @param from_frame_id: from which frame
-    #
-    #     """
-    #     # edge case, prepend a frame to the beginning of the frame list
-    #     if dest_frame_id == BasicFrame.VOID_FRAME_ID:
-    #         self.prepend_frame(from_frame_id)
-    #         return
-    #
-    #     if dest_frame_id not in self.__all_fids or from_frame_id not in self.__all_fids:
-    #         raise EngineError("insert fail, frame not exist")
-    #
-    #     from_frame = self.__game_content[from_frame_id]
-    #     dest_frame = self.__game_content[dest_frame_id]
-    #
-    #     if from_frame == self.__head:
-    #         self.__head = from_frame.action.next_f
-    #
-    #     from_frame.action.next_f = dest_frame.action.next_f
-    #     from_frame.action.prev_f = dest_frame_id
-    #
-    #     if dest_frame_id != self.__tail:
-    #         self.__game_content[dest_frame.action.next_f].action.prev_f = from_frame_id
-    #     else:
-    #         self.__tail = from_frame_id
-    #
-    #     dest_frame.action.next_f = from_frame_id
-
     @engine_exception_handler
     def remove_frame(self, frame_id: int):
         """
@@ -338,6 +286,9 @@ class Engine:
 
         # update game content and metadata
         self.__game_content.pop(frame_id)
+        self.__frame_meta[cur_frame.meta.chapter].remove(
+            (frame_id, cur_frame.meta.name)
+        )
         if len(self.__game_content) == 0:
             self.__last_fid = Frame.VOID_FRAME_ID
         self.__all_fids.remove(frame_id)
@@ -449,9 +400,30 @@ class Engine:
 
         """
         self.__update_metadata()
-        game_content_raw = [self.__metadata_buffer, self.__game_content]
+        game_content_raw = [
+            self.__metadata_buffer,
+            self.__game_content,
+            self.__frame_meta,
+        ]
         try:
             self.__dumper(game_content_raw, self.__game_file_dir)
         except Exception as e:
             raise EngineError(f"fail to dump game file due to: {str(e)}") from e
         return StatusCode.OK
+
+    @engine_exception_handler
+    def render_struct(self, chapter: Optional[str] = None):
+        """
+        render the game content struct, if chapter set to be none,
+        return the whole struct, or will only render the struct under
+        the specified chapter
+
+        @return: the struct for game content
+
+        """
+        if chapter is None:
+            return self.__frame_meta
+
+        if chapter not in self.__frame_meta:
+            return {}
+        return self.__frame_meta[chapter]
