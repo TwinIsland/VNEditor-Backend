@@ -35,33 +35,30 @@ class TestEngine(TestCase):
 
         branch.delete_branch(1)
         branch.delete_branch(111)
-
+        frame_meta = FrameMeta(chapter="a")
         dialogue.set_dialogue("hello world")
         self.assertEqual(dialogue.get_dialogue()[0], "hello world")
         music = Music(signal=MusicSignal.KEEP)
         music.set_music()
         music.get_music()
-
+        engine.append_chapter(engine.make_chapter("a"))
+        print(engine.get_all_chapter())
         for i in range(100):
             frame = engine.make_frame(
                 background=background,
                 chara=characters,
                 music=music,
                 dialog=dialogue,
-                meta=meta,
             )
-            self.assertNotEqual(frame_to_model(frame), None)
+            self.assertNotEqual(frame_to_model(frame, frame_meta), None)
             if i % 10 == 0:
-                nid = engine.append_frame(frame, force=True)
+                nid = engine.append_frame(frame, frame_meta, force=True)
                 print("add frame: ", nid)
-        head_id = engine.get_head_id()
-        print(f"head id: {head_id}")
         frame = engine.make_frame(
             background=background,
             chara=characters,
             music=music,
             dialog=dialogue,
-            meta=meta,
         )
         checker = FrameChecker("../projects/test", ConfigLoader("../service.ini"))
         self.assertFalse(checker.check(frame)[0])
@@ -73,7 +70,6 @@ class TestEngine(TestCase):
             chara=characters,
             music=music,
             dialog=dialogue,
-            meta=meta,
         )
         print(engine.render_struct())
 
@@ -84,7 +80,7 @@ class TestEngine(TestCase):
         for i in frame_keys:
             if random.getrandbits(1):
                 print(f"remove id: {i}")
-                engine.remove_frame(frame_id=i)
+                engine.remove_frame(fid=i)
 
         engine.commit()
         ids = list(engine.get_all_frame_id())
@@ -99,7 +95,7 @@ class TestEngine(TestCase):
         for i in frame_keys:
             if random.getrandbits(1):
                 print(f"remove id: {i}")
-                engine.remove_frame(frame_id=i)
+                engine.remove_frame(fid=i)
         self.assertNotEqual(len(engine.get_ordered_fid()), 0)
         self.assertEqual(engine.render_struct("not exist chapter"), {})
         engine.commit()

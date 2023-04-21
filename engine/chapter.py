@@ -1,3 +1,7 @@
+"""
+define the class for Chapter, which is a special frame
+
+"""
 from pydantic import BaseModel
 from engine.frame import BasicFrame
 
@@ -7,6 +11,7 @@ class Chapter(BasicFrame):
     Chapter class, use to classified frames
 
     """
+
     tail_fid: int = BasicFrame.VOID_FRAME_ID
 
     def __init__(self, fid: int, chapter_name: str):
@@ -14,6 +19,11 @@ class Chapter(BasicFrame):
         self.chapter_name = chapter_name
 
     def set_tail_fid(self, fid: int):
+        """
+        set the tail fid
+
+        @param fid: the frame id for tail
+        """
         self.tail_fid = fid
 
 
