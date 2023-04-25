@@ -11,7 +11,7 @@ import time
 from typing import Optional
 from packaging import version
 
-from module.config_manager import ConfigLoader
+from module.config_module import ConfigLoader
 from utils.file_utils import check_file_valid, check_folder_valid, abs_dir
 from utils.status import StatusCode
 from utils.exception import EngineError

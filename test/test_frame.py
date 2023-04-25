@@ -6,7 +6,7 @@ import unittest
 from typing import Optional
 from pydantic import BaseModel
 
-from module.config_manager import ConfigLoader
+from module.config_module import ConfigLoader
 from kernel.component.background import Background
 from kernel.component.character import (
     Character,

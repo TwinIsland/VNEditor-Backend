@@ -6,7 +6,7 @@ from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from module.project_manager import ResourcesType
+from module.project_module import ResourcesType
 
 from utils.status import StatusCode
 from utils.return_type import ReturnList, ReturnDict, ReturnStatus

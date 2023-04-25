@@ -1,6 +1,6 @@
 from functools import wraps
 
-from module.config_manager import ConfigLoader
+from module.config_module import ConfigLoader
 from utils.status import StatusCode
 from utils.return_type import ReturnList, ReturnDict, ReturnStatus
 
