@@ -48,14 +48,14 @@ class Frame(BasicFrame):
     """
 
     def __init__(
-            self,
-            fid: int,
-            background: Background,
-            chara: list[Character],
-            music: Music,
-            dialog: Dialogue,
-            meta: FrameMeta,
-            action: Optional[Action] = None,
+        self,
+        fid: int,
+        background: Background,
+        chara: list[Character],
+        music: Music,
+        dialog: Dialogue,
+        meta: FrameMeta,
+        action: Optional[Action] = None,
     ):
         """
         constructor for frame class
@@ -157,7 +157,7 @@ class FrameChecker:
 
         if dialogue_character is not None:
             if not check_file_valid(
-                    abs_dir(self.__chara_base_dir, dialogue_character.res_name)
+                abs_dir(self.__chara_base_dir, dialogue_character.res_name)
             ):
                 return [
                     False,

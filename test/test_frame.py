@@ -42,6 +42,7 @@ class TestFrameChecker(unittest.TestCase):
                 dialogue="Hello!", character=Character(res_name="chara_res_name1")
             ),
             action=Action(1, 2),
+            meta=FrameMeta(),
         )
 
         result, message = self.frame_checker.check(frame)
@@ -63,6 +64,7 @@ class TestFrameChecker(unittest.TestCase):
                 dialogue="Hello!", character=Character(res_name="chara_res_name1")
             ),
             action=Action(1, 2),
+            meta=FrameMeta(),
         )
 
         result, message = self.frame_checker.check(frame)
